@@ -1,0 +1,157 @@
+architecture vmarch {
+
+	registers:
+		storage stack_reg[64];
+
+		view sz 	= stack_reg[0..31];
+		view ptr 	= stack_reg[32..63];
+	memory:
+		range _code [0x0..0xFFFFFFFF] {
+			cell = 8;
+			endianess = little-endian;
+			granularity = 0;
+		}
+		range _data [0x0..0xFFFFFFFF] {
+			cell = 8;
+			endianess = little-endian;
+			granularity = 0;
+		}
+	instructions: /* types */
+		encode imm32 field = immediate[32] data;
+		encode off32 field = immediate[32] offset;
+
+		encode dis32 field = immediate[32] displacement;
+
+	instructions: /* alternatives */
+		encode altPush sequence = alternatives {
+			pushVal = { 01, imm32 as val },
+			pushOff = { 10, off32 as off },
+			pushArr = { 11, off32 as arr, off32 as indexVar }
+		};
+		encode altSave sequence = alternatives {
+			saveVar 	= { 01, off32 as var },
+			saveArr  	= { 10, off32 as arr, off32 as indexVar }
+		};
+		encode altRet sequence = alternatives {
+			retNothing 	= { 000000 00 },
+			retVar  	= { 000000 01, off32 as var }
+		};
+		encode altCall sequence = alternatives {
+			callNoArg 	= { 00000 000 },
+			callArg_1  	= { 00000 001, off32 as var },
+			callArg_2  	= { 00000 010, off32 as var, off32 as var2 },
+			callArg_3  	= { 00000 011, off32 as var, off32 as var2, off32 as var3 },
+			callArg_4  	= { 00000 100, off32 as var, off32 as var2, off32 as var3, off32 as var4 }
+		};
+	instructions: /* memory */
+		instruction nop		= { 0 000 0000 };
+
+		instruction push 	= { 0 000 00  , sequence altPush };
+		instruction pop		= { 0 000 0100 };
+		
+		instruction save	= { 0 000 01  , sequence altSave };
+		instruction cpy		= { 0 001 0011 };
+		instruction random	= { 0 001 0100, imm32 as min, imm32 as max };
+
+		instruction empty	= { 0 001 0101 };
+
+	instructions: /* transfer of control */
+		instruction jmp		= { 0 100 0000, off32 as label };
+		instruction jgz		= { 0 100 0001, off32 as label };
+		instruction jlz		= { 0 100 0010, off32 as label };
+		instruction jez		= { 0 100 0011, off32 as label };	
+		instruction jnz		= { 0 100 0100, off32 as label };	
+	instructions: /* functions */
+		instruction call	= { 0 100 0101, off32 as label, sequence altCall };
+		instruction ret	 	= { 0 100 0110, sequence altRet };
+		instruction ldloc	= { 0 100 0111, imm32 as varNum };
+		instruction stloc	= { 0 100 1000, imm32 as varNum };
+		instruction ldarg	= { 0 100 1001, imm32 as varNum };
+		instruction starg	= { 0 100 1010, imm32 as varNum };
+	instructions: /* arithmetics and logics */
+		/* + - * / */
+		instruction add 	= { 1 000 0000 };
+		instruction sub 	= { 1 000 0001 };
+		instruction mul 	= { 1 000 0010 };
+		instruction div 	= { 1 000 0011 };
+
+		instruction sub2 	= { 1 000 0100 };
+		instruction div2 	= { 1 000 0101 };
+
+		instruction neg 	= { 1 000 0110 };
+		instruction abs 	= { 1 000 0111 };
+
+		/* ++ -- */
+		instruction inc 	= { 1 001 0000 };
+		instruction dec 	= { 1 001 0001 };
+
+		/* & | ^ ~ */
+		instruction and1 	= { 1 010 0000 };
+		instruction or1	 	= { 1 010 0001 };
+		instruction xor1 	= { 1 010 0010 };
+		instruction not1 	= { 1 010 0011 };
+
+		instruction cmp		= { 1 010 0100 };
+		instruction cmp2	= { 1 010 0101 };
+	instructions: /* I/O */
+		instruction print 	= { 0 000 0001 };
+		instruction read 	= { 1 010 0110 };
+	mnemonics: /* formats */
+		format plain1 	is "{1}";
+		format plain2 	is "{1}, {2}";
+
+		format pushFormat of 	(val)			"{1}"			when pushVal,
+								(off)			"*{1}" 			when pushOff,
+								(arr, indexVar)	"[{1}], *{2}" 	when pushArr;
+
+		format saveFormat of 	(var)			"*{1}"			when saveVar,
+								(arr, indexVar)	"[{1}], *{2}" 	when saveArr;
+		
+		format retFormat of 	()				""				when retNothing,
+								(var)			"*{1}" 			when retVar;
+
+		format callFormat of 	(label)							"{1}"							when callNoArg,
+								(label, var)					"{1}, *{2}"						when callArg_1,
+								(label, var, var2)				"{1}, *{2}, *{3}"				when callArg_2,
+								(label, var, var2, var3)		"{1}, *{2}, *{3}, *{4}"			when callArg_3,
+								(label, var, var2, var3, var4)	"{1}, *{2}, *{3}, *{4}, *{5}"	when callArg_4;
+	mnemonics:
+		mnemonic nop	();		 	
+		mnemonic push 	(...) pushFormat;
+		mnemonic pop	();	
+		mnemonic empty	();	
+		mnemonic jmp	(label) plain1;	
+		mnemonic jgz	(label) plain1;
+		mnemonic jlz	(label) plain1;	
+		mnemonic jez	(label) plain1;
+		mnemonic jnz	(label) plain1;		
+		mnemonic call	(...) callFormat;		
+		mnemonic ret 	(...) retFormat;
+		mnemonic add 	();
+		mnemonic sub 	();
+		mnemonic sub2 	();
+		mnemonic mul 	();
+		mnemonic neg 	();
+		mnemonic abs 	();
+		mnemonic div 	();
+		mnemonic div2 	();
+		mnemonic inc 	();
+		mnemonic dec 	();
+		mnemonic and1	();
+		mnemonic or1	();		
+		mnemonic xor1	();
+		mnemonic not1	();
+		mnemonic print	();
+		mnemonic cpy	();
+		mnemonic cmp	();
+		mnemonic cmp2	();
+		mnemonic save	(...) saveFormat;
+		mnemonic random	(min, max) plain2;	
+
+		mnemonic ldloc	(varNum) plain1;
+		mnemonic stloc	(varNum) plain1;
+		mnemonic ldarg	(varNum) plain1;
+		mnemonic starg	(varNum) plain1;
+
+		mnemonic read	();
+}

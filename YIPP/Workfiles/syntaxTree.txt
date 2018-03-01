@@ -1,0 +1,699 @@
+Definition syntax tree at 11.12.2017 13:29:55
+
+Parsing C:\RemoteTasks.Workspace\Sessions\ValidateArchDefSyntax_e21ac152-5e46-4b1d-bd94-6ce5d8da2a1b\workdir\in.lab.arh
+
+ DefSyntaxTree at [L0, C0]: architecture vmarch {\r\n\r\n	registers:\r\n		storage stack_reg[64];\r\n\r\n		view sz 	= stack_reg[0..31];\r\n		view ptr 	= stack_reg[32..63];\r\n	memory:\r\n		range _code [0x0..0xFFFFFFFF] {\r\n			cell = 8;\r\n			endianess = little-endian;\r\n			granularity = 0;\r\n		}\r\n		range _data [0x0..0xFFFFFFFF] {\r\n			cell = 8;\r\n			endianess = little-endian;\r\n			granularity = 0;\r\n		}\r\n	instructions: /* types */\r\n		encode imm8  field = immediate[8]  data;\r\n		encode imm16 field = immediate[16] data;\r\n		encode imm32 field = immediate[32] data;\r\n\r\n		encode off8  field = immediate[8]  offset;\r\n		encode off16 field = immediate[16] offset;\r\n		encode off32 field = immediate[32] offset;\r\n\r\n		encode dis8  field = immediate[8]  displacement;\r\n		encode dis16 field = immediate[16] displacement;\r\n		encode dis32 field = immediate[32] displacement;\r\n\r\n	instructions: /* alternatives */\r\n		encode altPush sequence = alternatives {\r\n			pushVal = { 000000 00, imm32 as val },\r\n			pushOff = { 000000 01, off32 as off },\r\n			pushArr = { 000000 10, off32 as arr, off32 as indexVar }\r\n		};\r\n		encode altSave sequence = alternatives {\r\n			saveVar 	= { 000000 00, off32 as var },\r\n			saveArr  	= { 000000 01, off32 as arr, off32 as indexVar }\r\n		};\r\n		encode altRet sequence = alternatives {\r\n			retNothing 	= { 000000 00 },\r\n			retVar  	= { 000000 01, off32 as var }\r\n		};\r\n		encode altCall sequence = alternatives {\r\n			callNoArg 	= { 00000 000 },\r\n			callArg_1  	= { 00000 001, off32 as var },\r\n			callArg_2  	= { 00000 010, off32 as var, off32 as var2 },\r\n			callArg_3  	= { 00000 011, off32 as var, off32 as var2, off32 as var3 },\r\n			callArg_4  	= { 00000 100, off32 as var, off32 as var2, off32 as var3, off32 as var4 }\r\n		};\r\n	instructions: /* memory */\r\n		instruction nop		= { 0 000 0000 };\r\n\r\n		instruction push 	= { 0 001 0000, sequence altPush };\r\n		instruction pop		= { 0 001 0001 };\r\n		\r\n		instruction save	= { 0 001 0010, sequence altSave };\r\n		instruction cpy		= { 0 001 0011 };\r\n		instruction random	= { 0 001 0100, imm32 as min, imm32 as max };\r\n\r\n		instruction empty	= { 0 001 0101 };\r\n\r\n	instructions: /* transfer of control */\r\n		instruction jmp		= { 0 100 0000, off32 as label };\r\n		instruction jgz		= { 0 100 0001, off32 as label };\r\n		instruction jlz		= { 0 100 0010, off32 as label };\r\n		instruction jez		= { 0 100 0011, off32 as label };	\r\n		instruction jnz		= { 0 100 0100, off32 as label };	\r\n\r\n		instruction call	= { 0 100 0101, off32 as label, sequence altCall };\r\n		instruction ret	 	= { 0 100 0110, sequence altRet };\r\n	instructions: /* arithmetics and logics */\r\n		/* + - * / */\r\n		instruction add 	= { 1 000 0000 };\r\n		instruction sub 	= { 1 000 0001 };\r\n		instruction mul 	= { 1 000 0010 };\r\n		instruction div 	= { 1 000 0011 };\r\n\r\n		instruction sub2 	= { 1 000 0100 };\r\n		instruction div2 	= { 1 000 0101 };\r\n\r\n		instruction neg 	= { 1 000 0110 };\r\n		instruction abs 	= { 1 000 0111 };\r\n\r\n		/* ++ -- */\r\n		instruction inc 	= { 1 001 0000 };\r\n		instruction dec 	= { 1 001 0001 };\r\n\r\n		/* & | ^ ~ */\r\n		instruction and1 	= { 1 010 0000 };\r\n		instruction or1	 	= { 1 010 0001 };\r\n		instruction xor1 	= { 1 010 0010 };\r\n		instruction not1 	= { 1 010 0011 };\r\n\r\n		instruction cmp		= { 1 010 0100 };\r\n		instruction cmp2	= { 1 010 0101 };\r\n	instructions: /* tools */\r\n		instruction print 	= { 0 000 0001 };\r\n	mnemonics: /* formats */\r\n		format plain1 	is "{1}";\r\n		format plain2 	is "{1}, {2}";\r\n\r\n		format pushFormat of 	(val)			"{1}"			when pushVal,\r\n								(off)			"*{1}" 			when pushOff,\r\n								(arr, indexVar)	"[{1}], *{2}" 	when pushArr;\r\n\r\n		format saveFormat of 	(var)			"*{1}"			when saveVar,\r\n								(arr, indexVar)	"[{1}], *{2}" 	when saveArr;\r\n		\r\n		format retFormat of 	()				""				when retNothing,\r\n								(var)			"*{1}" 			when retVar;\r\n\r\n		format callFormat of 	(label)							"{1}"							when callNoArg,\r\n								(label, var)					"{1}, *{2}"						when callArg_1,\r\n								(label, var, var2)				"{1}, *{2}, *{3}"				when callArg_2,\r\n								(label, var, var2, var3)		"{1}, *{2}, *{3}, *{4}"			when callArg_3,\r\n								(label, var, var2, var3, var4)	"{1}, *{2}, *{3}, *{4}, *{5}"	when callArg_4;\r\n	mnemonics:\r\n		mnemonic nop	();		 	\r\n		mnemonic push 	(...) pushFormat;\r\n		mnemonic pop	();	\r\n		mnemonic empty	();	\r\n		mnemonic jmp	(label) plain1;	\r\n		mnemonic jgz	(label) plain1;\r\n		mnemonic jlz	(label) plain1;	\r\n		mnemonic jez	(label) plain1;\r\n		mnemonic jnz	(label) plain1;		\r\n		mnemonic call	(...) callFormat;		\r\n		mnemonic ret 	(...) retFormat;\r\n		mnemonic add 	();\r\n		mnemonic sub 	();\r\n		mnemonic sub2 	();\r\n		mnemonic mul 	();\r\n		mnemonic neg 	();\r\n		mnemonic abs 	();\r\n		mnemonic div 	();\r\n		mnemonic div2 	();\r\n		mnemonic inc 	();\r\n		mnemonic dec 	();\r\n		mnemonic and1	();\r\n		mnemonic or1	();		\r\n		mnemonic xor1	();\r\n		mnemonic not1	();\r\n		mnemonic print	();\r\n		mnemonic cpy	();\r\n		mnemonic cmp	();\r\n		mnemonic cmp2	();\r\n		mnemonic save	(...) saveFormat;\r\n		mnemonic random	(min, max) plain2;	\r\n}
+  └─ ArchitectureAspectSyntaxNode at [L0, C0]: architecture vmarch {\r\n\r\n	registers:\r\n		storage stack_reg[64];\r\n\r\n		view sz 	= stack_reg[0..31];\r\n		view ptr 	= stack_reg[32..63];\r\n	memory:\r\n		range _code [0x0..0xFFFFFFFF] {\r\n			cell = 8;\r\n			endianess = little-endian;\r\n			granularity = 0;\r\n		}\r\n		range _data [0x0..0xFFFFFFFF] {\r\n			cell = 8;\r\n			endianess = little-endian;\r\n			granularity = 0;\r\n		}\r\n	instructions: /* types */\r\n		encode imm8  field = immediate[8]  data;\r\n		encode imm16 field = immediate[16] data;\r\n		encode imm32 field = immediate[32] data;\r\n\r\n		encode off8  field = immediate[8]  offset;\r\n		encode off16 field = immediate[16] offset;\r\n		encode off32 field = immediate[32] offset;\r\n\r\n		encode dis8  field = immediate[8]  displacement;\r\n		encode dis16 field = immediate[16] displacement;\r\n		encode dis32 field = immediate[32] displacement;\r\n\r\n	instructions: /* alternatives */\r\n		encode altPush sequence = alternatives {\r\n			pushVal = { 000000 00, imm32 as val },\r\n			pushOff = { 000000 01, off32 as off },\r\n			pushArr = { 000000 10, off32 as arr, off32 as indexVar }\r\n		};\r\n		encode altSave sequence = alternatives {\r\n			saveVar 	= { 000000 00, off32 as var },\r\n			saveArr  	= { 000000 01, off32 as arr, off32 as indexVar }\r\n		};\r\n		encode altRet sequence = alternatives {\r\n			retNothing 	= { 000000 00 },\r\n			retVar  	= { 000000 01, off32 as var }\r\n		};\r\n		encode altCall sequence = alternatives {\r\n			callNoArg 	= { 00000 000 },\r\n			callArg_1  	= { 00000 001, off32 as var },\r\n			callArg_2  	= { 00000 010, off32 as var, off32 as var2 },\r\n			callArg_3  	= { 00000 011, off32 as var, off32 as var2, off32 as var3 },\r\n			callArg_4  	= { 00000 100, off32 as var, off32 as var2, off32 as var3, off32 as var4 }\r\n		};\r\n	instructions: /* memory */\r\n		instruction nop		= { 0 000 0000 };\r\n\r\n		instruction push 	= { 0 001 0000, sequence altPush };\r\n		instruction pop		= { 0 001 0001 };\r\n		\r\n		instruction save	= { 0 001 0010, sequence altSave };\r\n		instruction cpy		= { 0 001 0011 };\r\n		instruction random	= { 0 001 0100, imm32 as min, imm32 as max };\r\n\r\n		instruction empty	= { 0 001 0101 };\r\n\r\n	instructions: /* transfer of control */\r\n		instruction jmp		= { 0 100 0000, off32 as label };\r\n		instruction jgz		= { 0 100 0001, off32 as label };\r\n		instruction jlz		= { 0 100 0010, off32 as label };\r\n		instruction jez		= { 0 100 0011, off32 as label };	\r\n		instruction jnz		= { 0 100 0100, off32 as label };	\r\n\r\n		instruction call	= { 0 100 0101, off32 as label, sequence altCall };\r\n		instruction ret	 	= { 0 100 0110, sequence altRet };\r\n	instructions: /* arithmetics and logics */\r\n		/* + - * / */\r\n		instruction add 	= { 1 000 0000 };\r\n		instruction sub 	= { 1 000 0001 };\r\n		instruction mul 	= { 1 000 0010 };\r\n		instruction div 	= { 1 000 0011 };\r\n\r\n		instruction sub2 	= { 1 000 0100 };\r\n		instruction div2 	= { 1 000 0101 };\r\n\r\n		instruction neg 	= { 1 000 0110 };\r\n		instruction abs 	= { 1 000 0111 };\r\n\r\n		/* ++ -- */\r\n		instruction inc 	= { 1 001 0000 };\r\n		instruction dec 	= { 1 001 0001 };\r\n\r\n		/* & | ^ ~ */\r\n		instruction and1 	= { 1 010 0000 };\r\n		instruction or1	 	= { 1 010 0001 };\r\n		instruction xor1 	= { 1 010 0010 };\r\n		instruction not1 	= { 1 010 0011 };\r\n\r\n		instruction cmp		= { 1 010 0100 };\r\n		instruction cmp2	= { 1 010 0101 };\r\n	instructions: /* tools */\r\n		instruction print 	= { 0 000 0001 };\r\n	mnemonics: /* formats */\r\n		format plain1 	is "{1}";\r\n		format plain2 	is "{1}, {2}";\r\n\r\n		format pushFormat of 	(val)			"{1}"			when pushVal,\r\n								(off)			"*{1}" 			when pushOff,\r\n								(arr, indexVar)	"[{1}], *{2}" 	when pushArr;\r\n\r\n		format saveFormat of 	(var)			"*{1}"			when saveVar,\r\n								(arr, indexVar)	"[{1}], *{2}" 	when saveArr;\r\n		\r\n		format retFormat of 	()				""				when retNothing,\r\n								(var)			"*{1}" 			when retVar;\r\n\r\n		format callFormat of 	(label)							"{1}"							when callNoArg,\r\n								(label, var)					"{1}, *{2}"						when callArg_1,\r\n								(label, var, var2)				"{1}, *{2}, *{3}"				when callArg_2,\r\n								(label, var, var2, var3)		"{1}, *{2}, *{3}, *{4}"			when callArg_3,\r\n								(label, var, var2, var3, var4)	"{1}, *{2}, *{3}, *{4}, *{5}"	when callArg_4;\r\n	mnemonics:\r\n		mnemonic nop	();		 	\r\n		mnemonic push 	(...) pushFormat;\r\n		mnemonic pop	();	\r\n		mnemonic empty	();	\r\n		mnemonic jmp	(label) plain1;	\r\n		mnemonic jgz	(label) plain1;\r\n		mnemonic jlz	(label) plain1;	\r\n		mnemonic jez	(label) plain1;\r\n		mnemonic jnz	(label) plain1;		\r\n		mnemonic call	(...) callFormat;		\r\n		mnemonic ret 	(...) retFormat;\r\n		mnemonic add 	();\r\n		mnemonic sub 	();\r\n		mnemonic sub2 	();\r\n		mnemonic mul 	();\r\n		mnemonic neg 	();\r\n		mnemonic abs 	();\r\n		mnemonic div 	();\r\n		mnemonic div2 	();\r\n		mnemonic inc 	();\r\n		mnemonic dec 	();\r\n		mnemonic and1	();\r\n		mnemonic or1	();		\r\n		mnemonic xor1	();\r\n		mnemonic not1	();\r\n		mnemonic print	();\r\n		mnemonic cpy	();\r\n		mnemonic cmp	();\r\n		mnemonic cmp2	();\r\n		mnemonic save	(...) saveFormat;\r\n		mnemonic random	(min, max) plain2;	\r\n}
+      ├─ ArchRegistersSyntaxNode at [L3, C2]: registers:\r\n		storage stack_reg[64];\r\n\r\n		view sz 	= stack_reg[0..31];\r\n		view ptr 	= stack_reg[32..63];
+      │   ├─ ArchRegsStorageItemSyntaxNode at [L4, C3]: storage stack_reg[64]
+      │   │   ├─ Size: 64
+      │   │   └─ Name: stack_reg
+      │   │ 
+      │   ├─ ArchRegsViewItemSyntaxNode at [L6, C3]: view sz 	= stack_reg[0..31]
+      │   │   ├─ IsHidden: False
+      │   │   ├─ ArchRegsViewWindowSyntaxNode at [L6, C14]: stack_reg[0..31]
+      │   │   │   ├─ FromIndex: 0
+      │   │   │   ├─ ToIndex: 32
+      │   │   │   └─ Name: stack_reg
+      │   │   │ 
+      │   │   └─ Name: sz
+      │   │ 
+      │   └─ ArchRegsViewItemSyntaxNode at [L7, C3]: view ptr 	= stack_reg[32..63]
+      │       ├─ IsHidden: False
+      │       ├─ ArchRegsViewWindowSyntaxNode at [L7, C15]: stack_reg[32..63]
+      │       │   ├─ FromIndex: 32
+      │       │   ├─ ToIndex: 64
+      │       │   └─ Name: stack_reg
+      │       │ 
+      │       └─ Name: ptr
+      │     
+      ├─ ArchMemorySyntaxNode at [L8, C2]: memory:\r\n		range _code [0x0..0xFFFFFFFF] {\r\n			cell = 8;\r\n			endianess = little-endian;\r\n			granularity = 0;\r\n		}\r\n		range _data [0x0..0xFFFFFFFF] {\r\n			cell = 8;\r\n			endianess = little-endian;\r\n			granularity = 0;\r\n		}
+      │   ├─ ArchMemoryRangeItemSyntaxNode at [L9, C3]: range _code [0x0..0xFFFFFFFF] {\r\n			cell = 8;\r\n			endianess = little-endian;\r\n			granularity = 0;\r\n		}
+      │   │   ├─ AddressFrom: 0
+      │   │   ├─ AddressTo: 4294967295
+      │   │   ├─ CellSize: 8
+      │   │   ├─ Endianess: Little
+      │   │   ├─ Granularity: 0
+      │   │   └─ Name: _code
+      │   │ 
+      │   └─ ArchMemoryRangeItemSyntaxNode at [L14, C3]: range _data [0x0..0xFFFFFFFF] {\r\n			cell = 8;\r\n			endianess = little-endian;\r\n			granularity = 0;\r\n		}
+      │       ├─ AddressFrom: 0
+      │       ├─ AddressTo: 4294967295
+      │       ├─ CellSize: 8
+      │       ├─ Endianess: Little
+      │       ├─ Granularity: 0
+      │       └─ Name: _data
+      │     
+      ├─ ArchInstructionsSyntaxNode at [L19, C2]: instructions: /* types */\r\n		encode imm8  field = immediate[8]  data;\r\n		encode imm16 field = immediate[16] data;\r\n		encode imm32 field = immediate[32] data;\r\n\r\n		encode off8  field = immediate[8]  offset;\r\n		encode off16 field = immediate[16] offset;\r\n		encode off32 field = immediate[32] offset;\r\n\r\n		encode dis8  field = immediate[8]  displacement;\r\n		encode dis16 field = immediate[16] displacement;\r\n		encode dis32 field = immediate[32] displacement;
+      │   ├─ ArchFieldEncodingSyntaxNode at [L20, C3]: encode imm8  field = immediate[8]  data
+      │   │   ├─ ArchFieldEncImmediateDescrSyntaxNode at [L20, C24]: immediate[8]  data
+      │   │   │   ├─ Length: 8
+      │   │   │   └─ Kind: Data
+      │   │   │ 
+      │   │   └─ Name: imm8
+      │   │ 
+      │   ├─ ArchFieldEncodingSyntaxNode at [L21, C3]: encode imm16 field = immediate[16] data
+      │   │   ├─ ArchFieldEncImmediateDescrSyntaxNode at [L21, C24]: immediate[16] data
+      │   │   │   ├─ Length: 16
+      │   │   │   └─ Kind: Data
+      │   │   │ 
+      │   │   └─ Name: imm16
+      │   │ 
+      │   ├─ ArchFieldEncodingSyntaxNode at [L22, C3]: encode imm32 field = immediate[32] data
+      │   │   ├─ ArchFieldEncImmediateDescrSyntaxNode at [L22, C24]: immediate[32] data
+      │   │   │   ├─ Length: 32
+      │   │   │   └─ Kind: Data
+      │   │   │ 
+      │   │   └─ Name: imm32
+      │   │ 
+      │   ├─ ArchFieldEncodingSyntaxNode at [L24, C3]: encode off8  field = immediate[8]  offset
+      │   │   ├─ ArchFieldEncImmediateDescrSyntaxNode at [L24, C24]: immediate[8]  offset
+      │   │   │   ├─ Length: 8
+      │   │   │   └─ Kind: Offset
+      │   │   │ 
+      │   │   └─ Name: off8
+      │   │ 
+      │   ├─ ArchFieldEncodingSyntaxNode at [L25, C3]: encode off16 field = immediate[16] offset
+      │   │   ├─ ArchFieldEncImmediateDescrSyntaxNode at [L25, C24]: immediate[16] offset
+      │   │   │   ├─ Length: 16
+      │   │   │   └─ Kind: Offset
+      │   │   │ 
+      │   │   └─ Name: off16
+      │   │ 
+      │   ├─ ArchFieldEncodingSyntaxNode at [L26, C3]: encode off32 field = immediate[32] offset
+      │   │   ├─ ArchFieldEncImmediateDescrSyntaxNode at [L26, C24]: immediate[32] offset
+      │   │   │   ├─ Length: 32
+      │   │   │   └─ Kind: Offset
+      │   │   │ 
+      │   │   └─ Name: off32
+      │   │ 
+      │   ├─ ArchFieldEncodingSyntaxNode at [L28, C3]: encode dis8  field = immediate[8]  displacement
+      │   │   ├─ ArchFieldEncImmediateDescrSyntaxNode at [L28, C24]: immediate[8]  displacement
+      │   │   │   ├─ Length: 8
+      │   │   │   └─ Kind: Displacement
+      │   │   │ 
+      │   │   └─ Name: dis8
+      │   │ 
+      │   ├─ ArchFieldEncodingSyntaxNode at [L29, C3]: encode dis16 field = immediate[16] displacement
+      │   │   ├─ ArchFieldEncImmediateDescrSyntaxNode at [L29, C24]: immediate[16] displacement
+      │   │   │   ├─ Length: 16
+      │   │   │   └─ Kind: Displacement
+      │   │   │ 
+      │   │   └─ Name: dis16
+      │   │ 
+      │   └─ ArchFieldEncodingSyntaxNode at [L30, C3]: encode dis32 field = immediate[32] displacement
+      │       ├─ ArchFieldEncImmediateDescrSyntaxNode at [L30, C24]: immediate[32] displacement
+      │       │   ├─ Length: 32
+      │       │   └─ Kind: Displacement
+      │       │ 
+      │       └─ Name: dis32
+      │     
+      ├─ ArchInstructionsSyntaxNode at [L32, C2]: instructions: /* alternatives */\r\n		encode altPush sequence = alternatives {\r\n			pushVal = { 000000 00, imm32 as val },\r\n			pushOff = { 000000 01, off32 as off },\r\n			pushArr = { 000000 10, off32 as arr, off32 as indexVar }\r\n		};\r\n		encode altSave sequence = alternatives {\r\n			saveVar 	= { 000000 00, off32 as var },\r\n			saveArr  	= { 000000 01, off32 as arr, off32 as indexVar }\r\n		};\r\n		encode altRet sequence = alternatives {\r\n			retNothing 	= { 000000 00 },\r\n			retVar  	= { 000000 01, off32 as var }\r\n		};\r\n		encode altCall sequence = alternatives {\r\n			callNoArg 	= { 00000 000 },\r\n			callArg_1  	= { 00000 001, off32 as var },\r\n			callArg_2  	= { 00000 010, off32 as var, off32 as var2 },\r\n			callArg_3  	= { 00000 011, off32 as var, off32 as var2, off32 as var3 },\r\n			callArg_4  	= { 00000 100, off32 as var, off32 as var2, off32 as var3, off32 as var4 }\r\n		};
+      │   ├─ ArchFieldsGroupEncodingSyntaxNode at [L33, C3]: encode altPush sequence = alternatives {\r\n			pushVal = { 000000 00, imm32 as val },\r\n			pushOff = { 000000 01, off32 as off },\r\n			pushArr = { 000000 10, off32 as arr, off32 as indexVar }\r\n		}
+      │   │   └─ Name: altPush
+      │   │ 
+      │   ├─ ArchFieldsGroupEncodingSyntaxNode at [L38, C3]: encode altSave sequence = alternatives {\r\n			saveVar 	= { 000000 00, off32 as var },\r\n			saveArr  	= { 000000 01, off32 as arr, off32 as indexVar }\r\n		}
+      │   │   └─ Name: altSave
+      │   │ 
+      │   ├─ ArchFieldsGroupEncodingSyntaxNode at [L42, C3]: encode altRet sequence = alternatives {\r\n			retNothing 	= { 000000 00 },\r\n			retVar  	= { 000000 01, off32 as var }\r\n		}
+      │   │   └─ Name: altRet
+      │   │ 
+      │   └─ ArchFieldsGroupEncodingSyntaxNode at [L46, C3]: encode altCall sequence = alternatives {\r\n			callNoArg 	= { 00000 000 },\r\n			callArg_1  	= { 00000 001, off32 as var },\r\n			callArg_2  	= { 00000 010, off32 as var, off32 as var2 },\r\n			callArg_3  	= { 00000 011, off32 as var, off32 as var2, off32 as var3 },\r\n			callArg_4  	= { 00000 100, off32 as var, off32 as var2, off32 as var3, off32 as var4 }\r\n		}
+      │       └─ Name: altCall
+      │     
+      ├─ ArchInstructionsSyntaxNode at [L53, C2]: instructions: /* memory */\r\n		instruction nop		= { 0 000 0000 };\r\n\r\n		instruction push 	= { 0 001 0000, sequence altPush };\r\n		instruction pop		= { 0 001 0001 };\r\n		\r\n		instruction save	= { 0 001 0010, sequence altSave };\r\n		instruction cpy		= { 0 001 0011 };\r\n		instruction random	= { 0 001 0100, imm32 as min, imm32 as max };\r\n\r\n		instruction empty	= { 0 001 0101 };
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L54, C3]: instruction nop		= { 0 000 0000 }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L54, C22]: { 0 000 0000 }
+      │   │   │   └─ ArchInsnFieldsFixedBitsSyntaxNode at [L54, C24]: 0 000 0000
+      │   │   │       └─ BitsStr: 0 000 0000
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: nop
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L56, C3]: instruction push 	= { 0 001 0000, sequence altPush }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L56, C23]: { 0 001 0000, sequence altPush }
+      │   │   │   ├─ ArchInsnFieldsFixedBitsSyntaxNode at [L56, C25]: 0 001 0000
+      │   │   │   │   └─ BitsStr: 0 001 0000
+      │   │   │   │ 
+      │   │   │   └─ ArchInsnFieldsEncodedSequenceRefSyntaxNode at [L56, C37]: sequence altPush
+      │   │   │       ├─ SequenceEncName: altPush
+      │   │   │       ├─ CaseName: <NULL>
+      │   │   │       └─ SequenceAlias: <NULL>
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: push
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L57, C3]: instruction pop		= { 0 001 0001 }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L57, C22]: { 0 001 0001 }
+      │   │   │   └─ ArchInsnFieldsFixedBitsSyntaxNode at [L57, C24]: 0 001 0001
+      │   │   │       └─ BitsStr: 0 001 0001
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: pop
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L59, C3]: instruction save	= { 0 001 0010, sequence altSave }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L59, C22]: { 0 001 0010, sequence altSave }
+      │   │   │   ├─ ArchInsnFieldsFixedBitsSyntaxNode at [L59, C24]: 0 001 0010
+      │   │   │   │   └─ BitsStr: 0 001 0010
+      │   │   │   │ 
+      │   │   │   └─ ArchInsnFieldsEncodedSequenceRefSyntaxNode at [L59, C36]: sequence altSave
+      │   │   │       ├─ SequenceEncName: altSave
+      │   │   │       ├─ CaseName: <NULL>
+      │   │   │       └─ SequenceAlias: <NULL>
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: save
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L60, C3]: instruction cpy		= { 0 001 0011 }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L60, C22]: { 0 001 0011 }
+      │   │   │   └─ ArchInsnFieldsFixedBitsSyntaxNode at [L60, C24]: 0 001 0011
+      │   │   │       └─ BitsStr: 0 001 0011
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: cpy
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L61, C3]: instruction random	= { 0 001 0100, imm32 as min, imm32 as max }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L61, C24]: { 0 001 0100, imm32 as min, imm32 as max }
+      │   │   │   ├─ ArchInsnFieldsFixedBitsSyntaxNode at [L61, C26]: 0 001 0100
+      │   │   │   │   └─ BitsStr: 0 001 0100
+      │   │   │   │ 
+      │   │   │   ├─ ArchInsnFieldsEncodedFieldRefSyntaxNode at [L61, C38]: imm32 as min
+      │   │   │   │   ├─ FieldEncName: imm32
+      │   │   │   │   └─ FieldName: min
+      │   │   │   │ 
+      │   │   │   └─ ArchInsnFieldsEncodedFieldRefSyntaxNode at [L61, C52]: imm32 as max
+      │   │   │       ├─ FieldEncName: imm32
+      │   │   │       └─ FieldName: max
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: random
+      │   │ 
+      │   └─ ArchInstructionEncodingSyntaxNode at [L63, C3]: instruction empty	= { 0 001 0101 }
+      │       ├─ ArchIstructionFieldsSequenceSyntaxNode at [L63, C23]: { 0 001 0101 }
+      │       │   └─ ArchInsnFieldsFixedBitsSyntaxNode at [L63, C25]: 0 001 0101
+      │       │       └─ BitsStr: 0 001 0101
+      │       │     
+      │       ├─ Operation: <NULL>
+      │       └─ Name: empty
+      │     
+      ├─ ArchInstructionsSyntaxNode at [L65, C2]: instructions: /* transfer of control */\r\n		instruction jmp		= { 0 100 0000, off32 as label };\r\n		instruction jgz		= { 0 100 0001, off32 as label };\r\n		instruction jlz		= { 0 100 0010, off32 as label };\r\n		instruction jez		= { 0 100 0011, off32 as label };	\r\n		instruction jnz		= { 0 100 0100, off32 as label };	\r\n\r\n		instruction call	= { 0 100 0101, off32 as label, sequence altCall };\r\n		instruction ret	 	= { 0 100 0110, sequence altRet };
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L66, C3]: instruction jmp		= { 0 100 0000, off32 as label }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L66, C22]: { 0 100 0000, off32 as label }
+      │   │   │   ├─ ArchInsnFieldsFixedBitsSyntaxNode at [L66, C24]: 0 100 0000
+      │   │   │   │   └─ BitsStr: 0 100 0000
+      │   │   │   │ 
+      │   │   │   └─ ArchInsnFieldsEncodedFieldRefSyntaxNode at [L66, C36]: off32 as label
+      │   │   │       ├─ FieldEncName: off32
+      │   │   │       └─ FieldName: label
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: jmp
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L67, C3]: instruction jgz		= { 0 100 0001, off32 as label }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L67, C22]: { 0 100 0001, off32 as label }
+      │   │   │   ├─ ArchInsnFieldsFixedBitsSyntaxNode at [L67, C24]: 0 100 0001
+      │   │   │   │   └─ BitsStr: 0 100 0001
+      │   │   │   │ 
+      │   │   │   └─ ArchInsnFieldsEncodedFieldRefSyntaxNode at [L67, C36]: off32 as label
+      │   │   │       ├─ FieldEncName: off32
+      │   │   │       └─ FieldName: label
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: jgz
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L68, C3]: instruction jlz		= { 0 100 0010, off32 as label }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L68, C22]: { 0 100 0010, off32 as label }
+      │   │   │   ├─ ArchInsnFieldsFixedBitsSyntaxNode at [L68, C24]: 0 100 0010
+      │   │   │   │   └─ BitsStr: 0 100 0010
+      │   │   │   │ 
+      │   │   │   └─ ArchInsnFieldsEncodedFieldRefSyntaxNode at [L68, C36]: off32 as label
+      │   │   │       ├─ FieldEncName: off32
+      │   │   │       └─ FieldName: label
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: jlz
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L69, C3]: instruction jez		= { 0 100 0011, off32 as label }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L69, C22]: { 0 100 0011, off32 as label }
+      │   │   │   ├─ ArchInsnFieldsFixedBitsSyntaxNode at [L69, C24]: 0 100 0011
+      │   │   │   │   └─ BitsStr: 0 100 0011
+      │   │   │   │ 
+      │   │   │   └─ ArchInsnFieldsEncodedFieldRefSyntaxNode at [L69, C36]: off32 as label
+      │   │   │       ├─ FieldEncName: off32
+      │   │   │       └─ FieldName: label
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: jez
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L70, C3]: instruction jnz		= { 0 100 0100, off32 as label }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L70, C22]: { 0 100 0100, off32 as label }
+      │   │   │   ├─ ArchInsnFieldsFixedBitsSyntaxNode at [L70, C24]: 0 100 0100
+      │   │   │   │   └─ BitsStr: 0 100 0100
+      │   │   │   │ 
+      │   │   │   └─ ArchInsnFieldsEncodedFieldRefSyntaxNode at [L70, C36]: off32 as label
+      │   │   │       ├─ FieldEncName: off32
+      │   │   │       └─ FieldName: label
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: jnz
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L72, C3]: instruction call	= { 0 100 0101, off32 as label, sequence altCall }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L72, C22]: { 0 100 0101, off32 as label, sequence altCall }
+      │   │   │   ├─ ArchInsnFieldsFixedBitsSyntaxNode at [L72, C24]: 0 100 0101
+      │   │   │   │   └─ BitsStr: 0 100 0101
+      │   │   │   │ 
+      │   │   │   ├─ ArchInsnFieldsEncodedFieldRefSyntaxNode at [L72, C36]: off32 as label
+      │   │   │   │   ├─ FieldEncName: off32
+      │   │   │   │   └─ FieldName: label
+      │   │   │   │ 
+      │   │   │   └─ ArchInsnFieldsEncodedSequenceRefSyntaxNode at [L72, C52]: sequence altCall
+      │   │   │       ├─ SequenceEncName: altCall
+      │   │   │       ├─ CaseName: <NULL>
+      │   │   │       └─ SequenceAlias: <NULL>
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: call
+      │   │ 
+      │   └─ ArchInstructionEncodingSyntaxNode at [L73, C3]: instruction ret	 	= { 0 100 0110, sequence altRet }
+      │       ├─ ArchIstructionFieldsSequenceSyntaxNode at [L73, C23]: { 0 100 0110, sequence altRet }
+      │       │   ├─ ArchInsnFieldsFixedBitsSyntaxNode at [L73, C25]: 0 100 0110
+      │       │   │   └─ BitsStr: 0 100 0110
+      │       │   │ 
+      │       │   └─ ArchInsnFieldsEncodedSequenceRefSyntaxNode at [L73, C37]: sequence altRet
+      │       │       ├─ SequenceEncName: altRet
+      │       │       ├─ CaseName: <NULL>
+      │       │       └─ SequenceAlias: <NULL>
+      │       │     
+      │       ├─ Operation: <NULL>
+      │       └─ Name: ret
+      │     
+      ├─ ArchInstructionsSyntaxNode at [L74, C2]: instructions: /* arithmetics and logics */\r\n		/* + - * / */\r\n		instruction add 	= { 1 000 0000 };\r\n		instruction sub 	= { 1 000 0001 };\r\n		instruction mul 	= { 1 000 0010 };\r\n		instruction div 	= { 1 000 0011 };\r\n\r\n		instruction sub2 	= { 1 000 0100 };\r\n		instruction div2 	= { 1 000 0101 };\r\n\r\n		instruction neg 	= { 1 000 0110 };\r\n		instruction abs 	= { 1 000 0111 };\r\n\r\n		/* ++ -- */\r\n		instruction inc 	= { 1 001 0000 };\r\n		instruction dec 	= { 1 001 0001 };\r\n\r\n		/* & | ^ ~ */\r\n		instruction and1 	= { 1 010 0000 };\r\n		instruction or1	 	= { 1 010 0001 };\r\n		instruction xor1 	= { 1 010 0010 };\r\n		instruction not1 	= { 1 010 0011 };\r\n\r\n		instruction cmp		= { 1 010 0100 };\r\n		instruction cmp2	= { 1 010 0101 };
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L76, C3]: instruction add 	= { 1 000 0000 }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L76, C22]: { 1 000 0000 }
+      │   │   │   └─ ArchInsnFieldsFixedBitsSyntaxNode at [L76, C24]: 1 000 0000
+      │   │   │       └─ BitsStr: 1 000 0000
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: add
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L77, C3]: instruction sub 	= { 1 000 0001 }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L77, C22]: { 1 000 0001 }
+      │   │   │   └─ ArchInsnFieldsFixedBitsSyntaxNode at [L77, C24]: 1 000 0001
+      │   │   │       └─ BitsStr: 1 000 0001
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: sub
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L78, C3]: instruction mul 	= { 1 000 0010 }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L78, C22]: { 1 000 0010 }
+      │   │   │   └─ ArchInsnFieldsFixedBitsSyntaxNode at [L78, C24]: 1 000 0010
+      │   │   │       └─ BitsStr: 1 000 0010
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: mul
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L79, C3]: instruction div 	= { 1 000 0011 }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L79, C22]: { 1 000 0011 }
+      │   │   │   └─ ArchInsnFieldsFixedBitsSyntaxNode at [L79, C24]: 1 000 0011
+      │   │   │       └─ BitsStr: 1 000 0011
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: div
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L81, C3]: instruction sub2 	= { 1 000 0100 }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L81, C23]: { 1 000 0100 }
+      │   │   │   └─ ArchInsnFieldsFixedBitsSyntaxNode at [L81, C25]: 1 000 0100
+      │   │   │       └─ BitsStr: 1 000 0100
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: sub2
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L82, C3]: instruction div2 	= { 1 000 0101 }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L82, C23]: { 1 000 0101 }
+      │   │   │   └─ ArchInsnFieldsFixedBitsSyntaxNode at [L82, C25]: 1 000 0101
+      │   │   │       └─ BitsStr: 1 000 0101
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: div2
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L84, C3]: instruction neg 	= { 1 000 0110 }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L84, C22]: { 1 000 0110 }
+      │   │   │   └─ ArchInsnFieldsFixedBitsSyntaxNode at [L84, C24]: 1 000 0110
+      │   │   │       └─ BitsStr: 1 000 0110
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: neg
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L85, C3]: instruction abs 	= { 1 000 0111 }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L85, C22]: { 1 000 0111 }
+      │   │   │   └─ ArchInsnFieldsFixedBitsSyntaxNode at [L85, C24]: 1 000 0111
+      │   │   │       └─ BitsStr: 1 000 0111
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: abs
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L88, C3]: instruction inc 	= { 1 001 0000 }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L88, C22]: { 1 001 0000 }
+      │   │   │   └─ ArchInsnFieldsFixedBitsSyntaxNode at [L88, C24]: 1 001 0000
+      │   │   │       └─ BitsStr: 1 001 0000
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: inc
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L89, C3]: instruction dec 	= { 1 001 0001 }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L89, C22]: { 1 001 0001 }
+      │   │   │   └─ ArchInsnFieldsFixedBitsSyntaxNode at [L89, C24]: 1 001 0001
+      │   │   │       └─ BitsStr: 1 001 0001
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: dec
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L92, C3]: instruction and1 	= { 1 010 0000 }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L92, C23]: { 1 010 0000 }
+      │   │   │   └─ ArchInsnFieldsFixedBitsSyntaxNode at [L92, C25]: 1 010 0000
+      │   │   │       └─ BitsStr: 1 010 0000
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: and1
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L93, C3]: instruction or1	 	= { 1 010 0001 }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L93, C23]: { 1 010 0001 }
+      │   │   │   └─ ArchInsnFieldsFixedBitsSyntaxNode at [L93, C25]: 1 010 0001
+      │   │   │       └─ BitsStr: 1 010 0001
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: or1
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L94, C3]: instruction xor1 	= { 1 010 0010 }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L94, C23]: { 1 010 0010 }
+      │   │   │   └─ ArchInsnFieldsFixedBitsSyntaxNode at [L94, C25]: 1 010 0010
+      │   │   │       └─ BitsStr: 1 010 0010
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: xor1
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L95, C3]: instruction not1 	= { 1 010 0011 }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L95, C23]: { 1 010 0011 }
+      │   │   │   └─ ArchInsnFieldsFixedBitsSyntaxNode at [L95, C25]: 1 010 0011
+      │   │   │       └─ BitsStr: 1 010 0011
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: not1
+      │   │ 
+      │   ├─ ArchInstructionEncodingSyntaxNode at [L97, C3]: instruction cmp		= { 1 010 0100 }
+      │   │   ├─ ArchIstructionFieldsSequenceSyntaxNode at [L97, C22]: { 1 010 0100 }
+      │   │   │   └─ ArchInsnFieldsFixedBitsSyntaxNode at [L97, C24]: 1 010 0100
+      │   │   │       └─ BitsStr: 1 010 0100
+      │   │   │     
+      │   │   ├─ Operation: <NULL>
+      │   │   └─ Name: cmp
+      │   │ 
+      │   └─ ArchInstructionEncodingSyntaxNode at [L98, C3]: instruction cmp2	= { 1 010 0101 }
+      │       ├─ ArchIstructionFieldsSequenceSyntaxNode at [L98, C22]: { 1 010 0101 }
+      │       │   └─ ArchInsnFieldsFixedBitsSyntaxNode at [L98, C24]: 1 010 0101
+      │       │       └─ BitsStr: 1 010 0101
+      │       │     
+      │       ├─ Operation: <NULL>
+      │       └─ Name: cmp2
+      │     
+      ├─ ArchInstructionsSyntaxNode at [L99, C2]: instructions: /* tools */\r\n		instruction print 	= { 0 000 0001 };
+      │   └─ ArchInstructionEncodingSyntaxNode at [L100, C3]: instruction print 	= { 0 000 0001 }
+      │       ├─ ArchIstructionFieldsSequenceSyntaxNode at [L100, C24]: { 0 000 0001 }
+      │       │   └─ ArchInsnFieldsFixedBitsSyntaxNode at [L100, C26]: 0 000 0001
+      │       │       └─ BitsStr: 0 000 0001
+      │       │     
+      │       ├─ Operation: <NULL>
+      │       └─ Name: print
+      │     
+      ├─ ArchMnemonicsSyntaxNode at [L101, C2]: mnemonics: /* formats */\r\n		format plain1 	is "{1}";\r\n		format plain2 	is "{1}, {2}";\r\n\r\n		format pushFormat of 	(val)			"{1}"			when pushVal,\r\n								(off)			"*{1}" 			when pushOff,\r\n								(arr, indexVar)	"[{1}], *{2}" 	when pushArr;\r\n\r\n		format saveFormat of 	(var)			"*{1}"			when saveVar,\r\n								(arr, indexVar)	"[{1}], *{2}" 	when saveArr;\r\n		\r\n		format retFormat of 	()				""				when retNothing,\r\n								(var)			"*{1}" 			when retVar;\r\n\r\n		format callFormat of 	(label)							"{1}"							when callNoArg,\r\n								(label, var)					"{1}, *{2}"						when callArg_1,\r\n								(label, var, var2)				"{1}, *{2}, *{3}"				when callArg_2,\r\n								(label, var, var2, var3)		"{1}, *{2}, *{3}, *{4}"			when callArg_3,\r\n								(label, var, var2, var3, var4)	"{1}, *{2}, *{3}, *{4}, *{5}"	when callArg_4;
+      │   ├─ ArchMnemonicAspectFormatDefSyntaxNode at [L102, C3]: format plain1 	is "{1}"
+      │   │   ├─ SingleFormatString: "{1}"
+      │   │   ├─ MultiFormatStrings: <NULL>
+      │   │   ├─ IsSingleFormat: True
+      │   │   └─ Name: plain1
+      │   │ 
+      │   ├─ ArchMnemonicAspectFormatDefSyntaxNode at [L103, C3]: format plain2 	is "{1}, {2}"
+      │   │   ├─ SingleFormatString: "{1}, {2}"
+      │   │   ├─ MultiFormatStrings: <NULL>
+      │   │   ├─ IsSingleFormat: True
+      │   │   └─ Name: plain2
+      │   │ 
+      │   ├─ ArchMnemonicAspectFormatDefSyntaxNode at [L105, C3]: format pushFormat of 	(val)			"{1}"			when pushVal,\r\n								(off)			"*{1}" 			when pushOff,\r\n								(arr, indexVar)	"[{1}], *{2}" 	when pushArr
+      │   │   ├─ SingleFormatString: <NULL>
+      │   │   ├─ ArchMnemonicFormatSpecSyntaxNode at [L105, C25]: (val)			"{1}"			when pushVal
+      │   │   │   ├─ FormatNameOrTemplateString: "{1}"
+      │   │   │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │   │   │   │   ├─ IsRegisterName: False
+      │   │   │   │   └─ Name: val
+      │   │   │   │ 
+      │   │   │   └─ ArchMnemonicFormatConstraintSymbolExprSyntaxNode at [L105, C46]: pushVal
+      │   │   │ 
+      │   │   ├─ ArchMnemonicFormatSpecSyntaxNode at [L106, C9]: (off)			"*{1}" 			when pushOff
+      │   │   │   ├─ FormatNameOrTemplateString: "*{1}"
+      │   │   │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │   │   │   │   ├─ IsRegisterName: False
+      │   │   │   │   └─ Name: off
+      │   │   │   │ 
+      │   │   │   └─ ArchMnemonicFormatConstraintSymbolExprSyntaxNode at [L106, C32]: pushOff
+      │   │   │ 
+      │   │   ├─ ArchMnemonicFormatSpecSyntaxNode at [L107, C9]: (arr, indexVar)	"[{1}], *{2}" 	when pushArr
+      │   │   │   ├─ FormatNameOrTemplateString: "[{1}], *{2}"
+      │   │   │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │   │   │   │   ├─ IsRegisterName: False
+      │   │   │   │   └─ Name: arr
+      │   │   │   │ 
+      │   │   │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │   │   │   │   ├─ IsRegisterName: False
+      │   │   │   │   └─ Name: indexVar
+      │   │   │   │ 
+      │   │   │   └─ ArchMnemonicFormatConstraintSymbolExprSyntaxNode at [L107, C45]: pushArr
+      │   │   │ 
+      │   │   ├─ IsSingleFormat: False
+      │   │   └─ Name: pushFormat
+      │   │ 
+      │   ├─ ArchMnemonicAspectFormatDefSyntaxNode at [L109, C3]: format saveFormat of 	(var)			"*{1}"			when saveVar,\r\n								(arr, indexVar)	"[{1}], *{2}" 	when saveArr
+      │   │   ├─ SingleFormatString: <NULL>
+      │   │   ├─ ArchMnemonicFormatSpecSyntaxNode at [L109, C25]: (var)			"*{1}"			when saveVar
+      │   │   │   ├─ FormatNameOrTemplateString: "*{1}"
+      │   │   │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │   │   │   │   ├─ IsRegisterName: False
+      │   │   │   │   └─ Name: var
+      │   │   │   │ 
+      │   │   │   └─ ArchMnemonicFormatConstraintSymbolExprSyntaxNode at [L109, C47]: saveVar
+      │   │   │ 
+      │   │   ├─ ArchMnemonicFormatSpecSyntaxNode at [L110, C9]: (arr, indexVar)	"[{1}], *{2}" 	when saveArr
+      │   │   │   ├─ FormatNameOrTemplateString: "[{1}], *{2}"
+      │   │   │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │   │   │   │   ├─ IsRegisterName: False
+      │   │   │   │   └─ Name: arr
+      │   │   │   │ 
+      │   │   │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │   │   │   │   ├─ IsRegisterName: False
+      │   │   │   │   └─ Name: indexVar
+      │   │   │   │ 
+      │   │   │   └─ ArchMnemonicFormatConstraintSymbolExprSyntaxNode at [L110, C45]: saveArr
+      │   │   │ 
+      │   │   ├─ IsSingleFormat: False
+      │   │   └─ Name: saveFormat
+      │   │ 
+      │   ├─ ArchMnemonicAspectFormatDefSyntaxNode at [L112, C3]: format retFormat of 	()				""				when retNothing,\r\n								(var)			"*{1}" 			when retVar
+      │   │   ├─ SingleFormatString: <NULL>
+      │   │   ├─ ArchMnemonicFormatSpecSyntaxNode at [L112, C24]: ()				""				when retNothing
+      │   │   │   ├─ FormatNameOrTemplateString: ""
+      │   │   │   └─ ArchMnemonicFormatConstraintSymbolExprSyntaxNode at [L112, C41]: retNothing
+      │   │   │ 
+      │   │   ├─ ArchMnemonicFormatSpecSyntaxNode at [L113, C9]: (var)			"*{1}" 			when retVar
+      │   │   │   ├─ FormatNameOrTemplateString: "*{1}"
+      │   │   │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │   │   │   │   ├─ IsRegisterName: False
+      │   │   │   │   └─ Name: var
+      │   │   │   │ 
+      │   │   │   └─ ArchMnemonicFormatConstraintSymbolExprSyntaxNode at [L113, C32]: retVar
+      │   │   │ 
+      │   │   ├─ IsSingleFormat: False
+      │   │   └─ Name: retFormat
+      │   │ 
+      │   └─ ArchMnemonicAspectFormatDefSyntaxNode at [L115, C3]: format callFormat of 	(label)							"{1}"							when callNoArg,\r\n								(label, var)					"{1}, *{2}"						when callArg_1,\r\n								(label, var, var2)				"{1}, *{2}, *{3}"				when callArg_2,\r\n								(label, var, var2, var3)		"{1}, *{2}, *{3}, *{4}"			when callArg_3,\r\n								(label, var, var2, var3, var4)	"{1}, *{2}, *{3}, *{4}, *{5}"	when callArg_4
+      │       ├─ SingleFormatString: <NULL>
+      │       ├─ ArchMnemonicFormatSpecSyntaxNode at [L115, C25]: (label)							"{1}"							when callNoArg
+      │       │   ├─ FormatNameOrTemplateString: "{1}"
+      │       │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │       │   │   ├─ IsRegisterName: False
+      │       │   │   └─ Name: label
+      │       │   │ 
+      │       │   └─ ArchMnemonicFormatConstraintSymbolExprSyntaxNode at [L115, C56]: callNoArg
+      │       │ 
+      │       ├─ ArchMnemonicFormatSpecSyntaxNode at [L116, C9]: (label, var)					"{1}, *{2}"						when callArg_1
+      │       │   ├─ FormatNameOrTemplateString: "{1}, *{2}"
+      │       │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │       │   │   ├─ IsRegisterName: False
+      │       │   │   └─ Name: label
+      │       │   │ 
+      │       │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │       │   │   ├─ IsRegisterName: False
+      │       │   │   └─ Name: var
+      │       │   │ 
+      │       │   └─ ArchMnemonicFormatConstraintSymbolExprSyntaxNode at [L116, C48]: callArg_1
+      │       │ 
+      │       ├─ ArchMnemonicFormatSpecSyntaxNode at [L117, C9]: (label, var, var2)				"{1}, *{2}, *{3}"				when callArg_2
+      │       │   ├─ FormatNameOrTemplateString: "{1}, *{2}, *{3}"
+      │       │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │       │   │   ├─ IsRegisterName: False
+      │       │   │   └─ Name: label
+      │       │   │ 
+      │       │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │       │   │   ├─ IsRegisterName: False
+      │       │   │   └─ Name: var
+      │       │   │ 
+      │       │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │       │   │   ├─ IsRegisterName: False
+      │       │   │   └─ Name: var2
+      │       │   │ 
+      │       │   └─ ArchMnemonicFormatConstraintSymbolExprSyntaxNode at [L117, C57]: callArg_2
+      │       │ 
+      │       ├─ ArchMnemonicFormatSpecSyntaxNode at [L118, C9]: (label, var, var2, var3)		"{1}, *{2}, *{3}, *{4}"			when callArg_3
+      │       │   ├─ FormatNameOrTemplateString: "{1}, *{2}, *{3}, *{4}"
+      │       │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │       │   │   ├─ IsRegisterName: False
+      │       │   │   └─ Name: label
+      │       │   │ 
+      │       │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │       │   │   ├─ IsRegisterName: False
+      │       │   │   └─ Name: var
+      │       │   │ 
+      │       │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │       │   │   ├─ IsRegisterName: False
+      │       │   │   └─ Name: var2
+      │       │   │ 
+      │       │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │       │   │   ├─ IsRegisterName: False
+      │       │   │   └─ Name: var3
+      │       │   │ 
+      │       │   └─ ArchMnemonicFormatConstraintSymbolExprSyntaxNode at [L118, C66]: callArg_3
+      │       │ 
+      │       ├─ ArchMnemonicFormatSpecSyntaxNode at [L119, C9]: (label, var, var2, var3, var4)	"{1}, *{2}, *{3}, *{4}, *{5}"	when callArg_4
+      │       │   ├─ FormatNameOrTemplateString: "{1}, *{2}, *{3}, *{4}, *{5}"
+      │       │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │       │   │   ├─ IsRegisterName: False
+      │       │   │   └─ Name: label
+      │       │   │ 
+      │       │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │       │   │   ├─ IsRegisterName: False
+      │       │   │   └─ Name: var
+      │       │   │ 
+      │       │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │       │   │   ├─ IsRegisterName: False
+      │       │   │   └─ Name: var2
+      │       │   │ 
+      │       │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │       │   │   ├─ IsRegisterName: False
+      │       │   │   └─ Name: var3
+      │       │   │ 
+      │       │   ├─ ArchMnemonicFormatArgSpecSyntaxNode at : 
+      │       │   │   ├─ IsRegisterName: False
+      │       │   │   └─ Name: var4
+      │       │   │ 
+      │       │   └─ ArchMnemonicFormatConstraintSymbolExprSyntaxNode at [L119, C75]: callArg_4
+      │       │ 
+      │       ├─ IsSingleFormat: False
+      │       └─ Name: callFormat
+      │     
+      ├─ ArchMnemonicsSyntaxNode at [L120, C2]: mnemonics:\r\n		mnemonic nop	();		 	\r\n		mnemonic push 	(...) pushFormat;\r\n		mnemonic pop	();	\r\n		mnemonic empty	();	\r\n		mnemonic jmp	(label) plain1;	\r\n		mnemonic jgz	(label) plain1;\r\n		mnemonic jlz	(label) plain1;	\r\n		mnemonic jez	(label) plain1;\r\n		mnemonic jnz	(label) plain1;		\r\n		mnemonic call	(...) callFormat;		\r\n		mnemonic ret 	(...) retFormat;\r\n		mnemonic add 	();\r\n		mnemonic sub 	();\r\n		mnemonic sub2 	();\r\n		mnemonic mul 	();\r\n		mnemonic neg 	();\r\n		mnemonic abs 	();\r\n		mnemonic div 	();\r\n		mnemonic div2 	();\r\n		mnemonic inc 	();\r\n		mnemonic dec 	();\r\n		mnemonic and1	();\r\n		mnemonic or1	();		\r\n		mnemonic xor1	();\r\n		mnemonic not1	();\r\n		mnemonic print	();\r\n		mnemonic cpy	();\r\n		mnemonic cmp	();\r\n		mnemonic cmp2	();\r\n		mnemonic save	(...) saveFormat;\r\n		mnemonic random	(min, max) plain2;
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L121, C3]: mnemonic nop	()
+      │   │   └─ Name: nop
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L122, C3]: mnemonic push 	(...) pushFormat
+      │   │   └─ Name: push
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L123, C3]: mnemonic pop	()
+      │   │   └─ Name: pop
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L124, C3]: mnemonic empty	()
+      │   │   └─ Name: empty
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L125, C3]: mnemonic jmp	(label) plain1
+      │   │   └─ Name: jmp
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L126, C3]: mnemonic jgz	(label) plain1
+      │   │   └─ Name: jgz
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L127, C3]: mnemonic jlz	(label) plain1
+      │   │   └─ Name: jlz
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L128, C3]: mnemonic jez	(label) plain1
+      │   │   └─ Name: jez
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L129, C3]: mnemonic jnz	(label) plain1
+      │   │   └─ Name: jnz
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L130, C3]: mnemonic call	(...) callFormat
+      │   │   └─ Name: call
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L131, C3]: mnemonic ret 	(...) retFormat
+      │   │   └─ Name: ret
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L132, C3]: mnemonic add 	()
+      │   │   └─ Name: add
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L133, C3]: mnemonic sub 	()
+      │   │   └─ Name: sub
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L134, C3]: mnemonic sub2 	()
+      │   │   └─ Name: sub2
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L135, C3]: mnemonic mul 	()
+      │   │   └─ Name: mul
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L136, C3]: mnemonic neg 	()
+      │   │   └─ Name: neg
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L137, C3]: mnemonic abs 	()
+      │   │   └─ Name: abs
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L138, C3]: mnemonic div 	()
+      │   │   └─ Name: div
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L139, C3]: mnemonic div2 	()
+      │   │   └─ Name: div2
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L140, C3]: mnemonic inc 	()
+      │   │   └─ Name: inc
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L141, C3]: mnemonic dec 	()
+      │   │   └─ Name: dec
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L142, C3]: mnemonic and1	()
+      │   │   └─ Name: and1
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L143, C3]: mnemonic or1	()
+      │   │   └─ Name: or1
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L144, C3]: mnemonic xor1	()
+      │   │   └─ Name: xor1
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L145, C3]: mnemonic not1	()
+      │   │   └─ Name: not1
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L146, C3]: mnemonic print	()
+      │   │   └─ Name: print
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L147, C3]: mnemonic cpy	()
+      │   │   └─ Name: cpy
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L148, C3]: mnemonic cmp	()
+      │   │   └─ Name: cmp
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L149, C3]: mnemonic cmp2	()
+      │   │   └─ Name: cmp2
+      │   │ 
+      │   ├─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L150, C3]: mnemonic save	(...) saveFormat
+      │   │   └─ Name: save
+      │   │ 
+      │   └─ ArchMnemonicAspectMnemonicDefSyntaxNode at [L151, C3]: mnemonic random	(min, max) plain2
+      │       └─ Name: random
+      │     
+      ├─ Kind: Default
+      └─ Name: vmarch
+    
+
+

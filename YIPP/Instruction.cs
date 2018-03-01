@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace YIPP
 {
@@ -329,8 +326,17 @@ namespace YIPP
     {
         public void Run()
         {
+            int value;
+
             Console.Write("Enter int value: ");
-            Interpreter.stack.Push(Convert.ToInt32(Console.ReadLine()));
+            while (!int.TryParse(Console.ReadLine(), out value))
+            {
+                Console.WriteLine("Wrong input! Try again.");
+                Console.Write("Enter int value: ");
+            }
+
+            Console.Beep();
+            Interpreter.stack.Push(value);
         }
     }
     class RNDM : IInstruction
