@@ -2,7 +2,7 @@
   "profiles": {
     "LAPPI": {
       "commandName": "Project",
-      "commandLineArgs": "C:\\Users\\Jake\\Desktop\\Docs\\VM\\ptptb\\test.ptptb"
+      "commandLineArgs": "C:\\Users\\Jake\\Desktop\\Docs\\VM_NEW\\ptptb\\test.ptptb"
     }
   }
 }

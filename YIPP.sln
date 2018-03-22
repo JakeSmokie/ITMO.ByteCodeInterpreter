@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YIPP", "YIPP\YIPP.csproj", "{30997183-1286-4EFB-B20B-78E9BFACDBC1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LAPPI", "LAPPI\LAPPI.csproj", "{70901AD2-D5D5-4ABF-A59E-9EDF7BEED41D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LAPPI", "LAPPI\LAPPI.csproj", "{70901AD2-D5D5-4ABF-A59E-9EDF7BEED41D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

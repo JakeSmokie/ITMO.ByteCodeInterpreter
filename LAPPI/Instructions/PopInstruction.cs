@@ -1,16 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using LAPPI.Module;
+﻿using LAPPI.Instructions;
 
-namespace LAPPI.Instructions
+namespace LAPPI
 {
-    class PopInstruction : IInstruction
+    internal class PopInstruction : IInstruction
     {
-        public byte Opcode => 4;
+        public byte Opcode => 3;
 
-        public void Run(BinaryModule module, Stack<int> valueStack, Stack<long> callStack, ref int cursor)
+        public void Run(InterpreterStorage storage)
         {
-            Console.WriteLine(valueStack.Pop());
+            InterpreterUtils.SaveValue(storage, storage.stack.Pop());
         }
     }
 }

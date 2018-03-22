@@ -7,38 +7,24 @@ namespace LAPPI
 {
     internal class Interpreter
     {
-        private BinaryModule module;
-        private Stack<int> valueStack;
-        private Stack<Int64> callStack;
-        private List<IInstruction> instructions;
-        private int cursor;
+        private InterpreterStorage storage;
 
-        public Interpreter(BinaryModule _module)
+        public Interpreter(InterpreterStorage storage)
         {
-            instructions = new List<IInstruction>
-            {
-                new NopInstruction(),
-                new PushImmInstruction(),
-                new PushVarInstruction(),
-                new PushArrInstruction(),
-                new PopInstruction()
-            };
-
-            valueStack = new Stack<int>();
-            callStack = new Stack<Int64>();
-            module = _module;
-            cursor = 0;
+            this.storage = storage;
         }
 
         public void Run()
         {
-            while (cursor < module.CodeSection.Blob.Length)
-            {
-                Byte opcode = module.CodeSection.Blob[cursor];
-                cursor += 1;
+            storage.cursor = (int) storage.module.entryPoint;
 
-                var instruction = instructions.Find(ins => ins.Opcode == opcode);
-                instruction.Run(module, valueStack, callStack, ref cursor);
+            while (storage.cursor < storage.module.codeSection.Blob.Length)
+            {
+                Byte opcode = storage.module.codeSection.Blob[storage.cursor];
+                storage.cursor += 1;
+
+                var instruction = storage.instructions.Find(op => op.Opcode == opcode);
+                instruction.Run(storage);
             }
         }
     }

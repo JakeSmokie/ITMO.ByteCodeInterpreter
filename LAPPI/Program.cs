@@ -1,5 +1,6 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.IO;
+using LAPPI.Instructions;
 using LAPPI.IO;
 using LAPPI.Module;
 
@@ -9,15 +10,39 @@ namespace LAPPI
     {
         private static void Main(string[] args)
         {
-            var reader = new ExtBinaryReader(File.OpenRead(path: args[0]));
+            var input = File.OpenRead(path: args[0]);
+            var reader = new ExtBinaryReader(input);
 
             var moduleLayout = new BinaryModuleLayout();
             moduleLayout.Read(reader);
 
-            var interpreter = new Interpreter(new BinaryModule(moduleLayout));
-            interpreter.Run();
+            input.Close();
 
-            Console.ReadKey();
+            var storage = new InterpreterStorage()
+            {
+                instructions = new List<IInstruction>
+                {
+                    new NopInstruction(),
+                    new PrintInstruction(),
+                    new MovInstruction(),
+                    new AddInstruction(),
+                    new JumpLessInstruction(),
+                    new HaltInstruction(),
+                    new InputInstruction(),
+                    new JumpGreaterInstruction(),
+                    new JumpEqualsInstruction(),
+                    new JumpInstruction(),
+                    new PushInstruction(),
+                    new PopInstruction (),
+                },
+                stack = new Stack<int>(),
+                module = new BinaryModule(moduleLayout),
+                cursor = 0,
+                registers = new int[4]
+            };
+
+            var interpreter = new Interpreter(storage);
+            interpreter.Run();
         }
     }
 }

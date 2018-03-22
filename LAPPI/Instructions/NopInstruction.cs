@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using LAPPI.Module;
+﻿using System;
 
 namespace LAPPI.Instructions
 {
@@ -7,6 +6,6 @@ namespace LAPPI.Instructions
     {
         public byte Opcode => 0;
 
-        public void Run(BinaryModule module, Stack<int> valueStack, Stack<long> callStack, ref int cursor) { }
+        public void Run(InterpreterStorage storage) { }
     }
 }
