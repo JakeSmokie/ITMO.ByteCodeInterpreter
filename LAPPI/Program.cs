@@ -33,7 +33,7 @@ namespace LAPPI
                     new JumpEqualsInstruction(),
                     new JumpInstruction(),
                     new PushInstruction(),
-                    new PopInstruction (),
+                    new PopInstruction(),
                 },
                 stack = new Stack<int>(),
                 module = new BinaryModule(moduleLayout),
